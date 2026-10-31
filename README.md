@@ -24,6 +24,8 @@ The skill inspects media, asks an adaptive preference questionnaire, analyzes vi
 - A natural TTS provider for narration; the workflow recommends Microsoft neural voices but does not lock production to one provider
 - Optional speech-to-text and scene-analysis tools appropriate to the production environment
 
+The skill includes a non-binding [recommended toolchain](references/recommended-tools.md), including FFmpeg/FFprobe, Faster-Whisper, FFmpeg scene detection or PySceneDetect, multimodal visual models, and Microsoft Edge TTS. Equivalent tools are welcome when they satisfy the same timing, quality, and validation requirements.
+
 ## Install
 
 ### Ask Codex to install it

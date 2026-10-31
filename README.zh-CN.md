@@ -24,6 +24,8 @@
 - 一个自然语音合成服务；工作流会推荐微软自然神经语音，但并不强制绑定某个供应商
 - 可选的语音转写、镜头检测和视频分析工具，具体取决于制作环境
 
+技能提供了一份非强制的[推荐工具链](references/recommended-tools.md)，包括 FFmpeg/FFprobe、Faster-Whisper、FFmpeg 镜头检测或 PySceneDetect、多模态视觉模型，以及 Microsoft Edge TTS。只要能够满足同样的时间戳、质量和验证要求，也可以换用其他本地、云端、商业或开源工具。
+
 ## 安装
 
 ### 让 Codex 自动安装

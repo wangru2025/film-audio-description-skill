@@ -13,6 +13,8 @@ Inspect the supplied media first. Report duration, video/audio/subtitle tracks, 
 
 Create a project with `scripts/init_project.py`. Record decisions and stage in `project.json`. Do not infer permission to process unrelated files or publish copyrighted media.
 
+Read [references/recommended-tools.md](references/recommended-tools.md) when choosing the production toolchain. The listed tools are recommendations, not mandatory dependencies; prefer an already available equivalent when it meets the same observable requirements.
+
 ## Choose the production path
 
 - For a short work up to about 30 minutes, one agent may analyze it end to end.
