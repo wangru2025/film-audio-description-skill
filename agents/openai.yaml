@@ -1,0 +1,4 @@
+interface:
+  display_name: "影视口述影像制作"
+  short_description: "交互式分析影视、审阅口述稿并生成自然语音混合成片文件"
+  default_prompt: "Use $film-audio-description to create a reviewable audio-description script for my film before producing the mixed video."
