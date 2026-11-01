@@ -1,0 +1,25 @@
+# Anti-summary quality gates
+
+Use these gates for long films and for any draft that begins explaining plot instead of describing images.
+
+## Evidence gate
+
+Create structured visual observations before candidate cues. Every normal cue must cite existing observation IDs and concrete evidence timestamps. Continuous action needs beginning/process/result evidence. Reject unsupported cues; an exceptional nonvisual editorial clarification must be labeled, justified, and presented for explicit review.
+
+## Soundtrack-value gate
+
+Ask: “What visible information does this add that the soundtrack does not already convey?” Reject a cue whose main source is dialogue, subtitles, transcript, synopsis, franchise knowledge, or model memory. In particular, do not narrate audible mission objectives, failed plans, broadcasts, causal explanations, or lists of steps. Describe visible gestures, screens, reactions, movement, spatial relationships, object state, and necessary on-screen text.
+
+## Coverage gate
+
+The complete scene table precedes drafting. Every scene has a visual observation or an explicit no-cue coverage record. Any gap longer than 60–90 seconds must be justified as visually stable or soundtrack-sufficient. Treat sparse contact sheets as indexes, not sufficient evidence. Inspect more densely around action, silent reactions, scene transitions, and object changes.
+
+## Drift gate
+
+Compare each analysis segment with accepted earlier ones. Stop and re-analyze when observation density falls sharply, average cue length rises sharply while observations fall, large unexplained gaps appear, or prose becomes abstract and causal. Cue counts are not quotas: a quiet scene may need few cues, but it still needs evidence coverage. A 20-minute interval with only a handful of observations is not adequate analysis.
+
+## State gate
+
+The coordinator merges proposed bible updates after each wave before issuing later work packages. Character, location, object, and story-state files cannot all remain empty after substantive analysis. Scene coverage, completed segment artifacts, merged draft coverage, script versions, per-batch approvals, and project stage must agree.
+
+Run `scripts/audit_project.py PROJECT_DIR --report qc/project-audit.json`. A nonzero exit blocks review delivery, approval, synthesis, and mixing until hard failures are corrected. Similarity and synopsis-like language checks are conservative heuristics; review the cited cue and nearby dialogue rather than automatically deleting it.

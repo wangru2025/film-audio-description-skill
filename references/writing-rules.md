@@ -17,6 +17,10 @@ Prefer **subject + action**, adding object or consequence when useful: “光头
 
 Do not mechanically repeat dialogue, narrate every background object, identify every blink or head turn, or read all end credits unless requested. Preserve important effects, music transitions, and purposeful silence.
 
+Before accepting a cue, ask: **What visible information does this add that the soundtrack does not already convey?** Dialogue, subtitles, transcripts, synopses, franchise knowledge, and model memory may orient analysis, but they are not visual evidence. Do not convert audible mission briefings, broadcasts, plans, causes, or consequences into narration. Describe the visible screen, gesture, action, expression, spatial relationship, object change, or necessary on-screen text instead.
+
+Write observations before cues. A continuing action needs evidence of its beginning, process, and result rather than one isolated still. A normal cue cites the supporting observation IDs and frame timestamps. If a nonvisual editorial clarification is exceptionally needed, label it explicitly and require user review; never disguise it as observed fact.
+
 ## Naming and continuity
 
 Assign canonical character IDs. Name a character once before first speech; do not repeat on every line. Re-identify only after a long absence, severe disguise or costume change, confusing voices, or a discontinuous scene where comprehension requires it.

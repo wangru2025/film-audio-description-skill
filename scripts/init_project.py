@@ -18,7 +18,8 @@ DEFAULTS = {
     "voice": None,
     "speech_rate": {"mode": "adaptive", "minimum": "+10%", "maximum": "+40%"},
     "ducking": {"strength": "light", "duck_only_during_narration": True, "outside_narration_gain": 1.0, "attack_ms": 300, "release_ms": 650, "ratio": 3.0},
-    "review": {"required_before_synthesis": True, "long_film_batch_minutes": 20, "require_final_full_script_approval": True}
+    "review": {"required_before_synthesis": True, "long_film_batch_minutes": 20, "require_final_full_script_approval": True},
+    "analysis": {"segment_minutes": [8, 15], "context_overlap_seconds": [15, 30], "maximum_unexplained_observation_gap_seconds": 90, "evidence_first": True}
 }
 
 def write_json(path: Path, value):
@@ -38,13 +39,14 @@ def main():
     for name in DIRS:
         (root / name).mkdir(parents=True, exist_ok=True)
     project = {
-        "schema_version": 1,
+        "schema_version": 2,
         "title": args.title or source.stem,
         "source_media": str(source),
         "created_at": datetime.now(timezone.utc).isoformat(),
         "stage": "initialized",
         "script_version": 0,
         "approved_script_version": None,
+        "batch_approvals": [],
         "preferences": DEFAULTS,
         "outputs": ["review_script", "machine_script", "narration_track", "mixed_video", "quality_report"]
     }

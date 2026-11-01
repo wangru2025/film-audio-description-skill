@@ -3,9 +3,14 @@
 ## Before approval
 
 - Every cue is supported by visible evidence and does not reveal future knowledge.
+- Every cue cites valid observation IDs and frame timestamps; `sound_sufficient` observations produce no cue.
+- The cue adds visible information rather than restating nearby dialogue, subtitles, broadcasts, or plans.
+- The scene table spans the full film, observations cover every scene, and unexplained gaps or later-segment density collapse have been resolved.
+- Continuity bibles have been merged before later segment work begins.
 - Canonical names, locations, and objects are consistent.
 - Low-confidence claims are listed for review.
 - The accessible review script matches the machine cue file.
+- `scripts/audit_project.py` passes its hard gates; investigate its similarity and summary-drift findings even when a heuristic needs human judgment.
 
 ## After synthesis
 

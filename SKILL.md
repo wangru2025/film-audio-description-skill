@@ -22,11 +22,13 @@ Read [references/recommended-tools.md](references/recommended-tools.md) when cho
 - For script-only work, stop after reviewable script delivery.
 - For an existing script or described track, preserve it and perform the requested review or revision rather than rebuilding automatically.
 
-Before visual analysis, read [references/writing-rules.md](references/writing-rules.md). Maintain canonical character, location, object, and reveal-state records. Prefer observations before prose: record who does what, where, when, why it matters, confidence, and whether the soundtrack already conveys it.
+Before visual analysis, read [references/writing-rules.md](references/writing-rules.md). Maintain canonical character, location, object, and reveal-state records. Build structured visual observations before writing prose; every normal cue must cite observation IDs and evidence timestamps. Read [references/anti-summary-quality-gates.md](references/anti-summary-quality-gates.md) for long works or whenever a draft risks becoming plot summary.
 
 ## Draft and review
 
 Generate machine-readable cues plus an accessible Markdown review document. Follow [references/project-schema.md](references/project-schema.md). Flag uncertain identities, illegible screen text, ambiguous actions, likely spoilers, and low-confidence speaker assignments.
+
+Before presenting each review batch, run `scripts/audit_project.py`. Treat missing visual evidence, dialogue restatement, incomplete scene coverage, empty continuity records, or analysis-density drift as drafting failures to correct, not minor warnings to defer.
 
 For films over 30 minutes, normally deliver review batches of roughly 20 minutes, incorporating user corrections before drafting later batches. After all batches, run a film-wide continuity pass and deliver the merged script for final review.
 

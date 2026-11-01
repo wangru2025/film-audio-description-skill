@@ -11,6 +11,8 @@ The skill inspects media, asks an adaptive preference questionnaire, analyzes vi
 - Accessible, time-coded Chinese audio-description scripts
 - Required user review and approval before narration or mixing
 - Scene-aware feature-film segmentation and subagent orchestration
+- Evidence-linked observations and cues, with anti-summary quality gates
+- Project audit for dialogue restatement, sparse coverage, continuity-state failures, and long-film drift
 - Character naming, reveal-order, object, location, and continuity tracking
 - Natural neural narration with measured duration and adaptive rate
 - Narration-only soundtrack ducking: source audio stays at its original level whenever narration is not speaking
@@ -92,7 +94,7 @@ The normal workflow is:
 
 1. Inspect media tracks and duration.
 2. Ask a short questionnaire with recommended settings.
-3. Analyze the film and prepare review batches for long works.
+3. Map the complete film, analyze scene-aware 8–15 minute segments, and assemble them into review batches.
 4. Deliver a readable time-coded script and uncertainty report.
 5. Wait for user corrections and explicit approval, such as `Y`.
 6. Synthesize narration, audit timing, mix, and verify the finished output.
@@ -102,6 +104,8 @@ The normal workflow is:
 - User approval of the current script is mandatory before batch TTS or mixing.
 - A meaning-changing script edit invalidates prior approval.
 - Narration cues must not overlap each other.
+- Normal cues must cite concrete visual observations; dialogue and plot exposition are not substitutes for visual evidence.
+- Run `scripts/audit_project.py PROJECT_DIR` before presenting a review batch or approving a merged script.
 - Source audio is ducked only while narration speaks; dialogue-free passages are never automatically attenuated.
 - Final output is rendered to a temporary target and promoted only after validation.
 - Users are responsible for having the rights and permissions required to process and distribute source media.
@@ -109,3 +113,5 @@ The normal workflow is:
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+Current release: `v0.2.0`.
