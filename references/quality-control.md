@@ -7,6 +7,8 @@
 - The cue adds visible information rather than restating nearby dialogue, subtitles, broadcasts, or plans.
 - The scene table spans the full film, observations cover every scene, and unexplained gaps or later-segment density collapse have been resolved.
 - Continuity bibles have been merged before later segment work begins.
+- Character names have film-local identity evidence and respect reveal order.
+- If opening/end-title description was selected, the title/credit inventory covers the chosen scope through the final frame and every event has a cue or approved omission. Company logos use the displayed company name; cast pairings use “演员名饰角色名”.
 - Canonical names, locations, and objects are consistent.
 - Low-confidence claims are listed for review.
 - The accessible review script matches the machine cue file.
@@ -28,6 +30,7 @@
 - Narration is routed both to the audible mix and, separately, to ducking control. Never use an audible bus only as a sidechain.
 - Pad only the silent sidechain control when needed. The padded zero signal must not trigger compression or change source level, and source audio must not truncate when the last cue ends.
 - One render owns one temporary target. Rename to final only after checks pass.
+- Every cue within one second of dialogue is listened to in the mix. Key names, numbers, clues, punchlines, emotional lines, and action-driving commands remain intelligible; failed overlaps are moved or rewritten before increasing ducking.
 
 ## Final verification
 

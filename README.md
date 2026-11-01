@@ -13,6 +13,8 @@ The skill inspects media, asks an adaptive preference questionnaire, analyzes vi
 - Scene-aware feature-film segmentation and subagent orchestration
 - Evidence-linked observations and cues, with anti-summary quality gates
 - Project audit for dialogue restatement, sparse coverage, continuity-state failures, and long-film drift
+- Film-local character identification, compact slot-aware writing, and dialogue-safe placement/mixing rules
+- Enforced opening/logo/title/credit coverage when selected in the questionnaire
 - Character naming, reveal-order, object, location, and continuity tracking
 - Natural neural narration with measured duration and adaptive rate
 - Narration-only soundtrack ducking: source audio stays at its original level whenever narration is not speaking
@@ -114,4 +116,4 @@ The normal workflow is:
 
 MIT. See [LICENSE](LICENSE).
 
-Current release: `v0.2.0`.
+Current release: `v0.3.0`.

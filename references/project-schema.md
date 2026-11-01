@@ -9,6 +9,7 @@ project/
   timeline/transcript.json
   timeline/scenes.json
   timeline/candidate-slots.json
+  timeline/title-credit-events.json
   bible/characters.json
   bible/locations.json
   bible/objects.json
@@ -42,6 +43,10 @@ Minimum cue fields:
   "confidence": 0.98,
   "requires_user_review": false,
   "placement_class": "A",
+  "available_slot": {"start": 136.7, "end": 139.2},
+  "nearby_dialogue": false,
+  "overlap_permission": "none_needed",
+  "placement_decision": "dialogue-free gap",
   "voice": null,
   "rate": null,
   "duration": null
@@ -71,5 +76,9 @@ Minimum observation fields:
 Use a coverage observation with `sound_sufficient: true` for a scene or long stable interval that needs no cue. Such observations prove analysis coverage but must not generate narration. Continuous actions require multiple evidence frames spanning beginning, process, and result.
 
 Character records include ID, canonical name, aliases, visual description, voice notes, first visual appearance, first spoken line, reveal time, safe pre-reveal name, and safe post-reveal name.
+
+Character records also include `identity_evidence`: evidence type, timestamp, observed name, linked observation/frame, confidence, and conflicts. Actor recognition or outside knowledge may be recorded as an unconfirmed lead, never as confirmation.
+
+When opening/end-title description is selected, `timeline/title-credit-events.json` inventories the selected parts through the first and final frame. Each event records `id`, `type` (`company_logo`, `film_title`, `cast`, or `crew`), time range, exact visible text, OCR confidence, evidence frames, and either generated `cue_ids` or an explicit `omission_reason` approved by the user. An empty inventory must explicitly state that no matching event appeared; absence of the file is not completion.
 
 The primary review artifact is accessible Markdown with timestamp, cue, reason, confidence/uncertainty, recommended rate, and overlap status. JSON supports machines; do not require the user to edit it.

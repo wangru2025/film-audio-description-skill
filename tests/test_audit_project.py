@@ -23,14 +23,19 @@ def observation(index, start, end=None, sufficient=False):
 class AuditProjectTests(unittest.TestCase):
     def make_base(self, root):
         write(root / "project.json", {"stage": "script_drafted", "script_version": 1,
-              "approved_script_version": None, "media_duration": 480})
+              "approved_script_version": None, "media_duration": 480,
+              "preferences": {"opening_credits": {"scope": "opening_and_principal_ending"}}})
         write(root / "timeline/scenes.json", {"scenes": [{"id": "s1", "start": 0, "end": 240},
               {"id": "s2", "start": 240, "end": 480}]})
         write(root / "timeline/transcript.json", {"duration": 480, "segments": [
               {"start": 202, "end": 205, "text": "我们马上离开这里"}]})
-        for name, value in (("characters", [{"id": "c1"}]), ("locations", [{"id": "l1"}]),
+        for name, value in (("characters", [{"id": "c1", "canonical_name": "李明",
+                            "identity_evidence": [{"type": "spoken_address", "time": 20}]}]), ("locations", [{"id": "l1"}]),
                             ("objects", [{"id": "o1"}]), ("story-state", {"time": 0})):
             write(root / f"bible/{name}.json", value)
+        write(root / "timeline/title-credit-events.json", {"scope_checked": True, "events": [
+              {"id": "credit-1", "type": "company_logo", "start": 0, "end": 2,
+               "visible_text": "某某影业有限公司", "evidence_frames": [1], "cue_ids": ["cue-logo"]}]})
 
     def test_good_project_passes(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -38,8 +43,11 @@ class AuditProjectTests(unittest.TestCase):
             observations = [observation(i, t) for i, t in enumerate((0, 70, 140, 210, 280, 350, 420, 478), 1)]
             write(root / "segments/segment-001/manifest.json", {"start": 0, "end": 480, "status": "drafted"})
             write(root / "segments/segment-001/observations.json", {"observations": observations})
-            write(root / "segments/segment-001/draft-cues.json", {"cues": [{"id": "cue-1", "start": 140,
-                  "text": "女人抬手指向屏幕。", "observation_ids": ["obs-3"], "evidence_frames": [140, 141, 142]}]})
+            write(root / "segments/segment-001/draft-cues.json", {"cues": [
+                  {"id": "cue-logo", "start": 0, "text": "某某影业有限公司。",
+                   "observation_ids": ["obs-1"], "evidence_frames": [0, 1, 2]},
+                  {"id": "cue-1", "start": 140, "text": "女人抬手指向屏幕。",
+                   "observation_ids": ["obs-3"], "evidence_frames": [140, 141, 142]}]})
             write(root / "script/merged-draft.json", {"coverage": {"start": 0, "end": 480}, "cues": []})
             report = MODULE.audit(root)
             self.assertTrue(report["passed"], report["issues"])
@@ -69,6 +77,13 @@ class AuditProjectTests(unittest.TestCase):
                         "merged_coverage_incomplete", "incomplete_segment_directory"}
             self.assertFalse(report["passed"])
             self.assertTrue(expected <= kinds, expected - kinds)
+
+    def test_selected_titles_require_inventory_and_cues(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.make_base(root)
+            (root / "timeline/title-credit-events.json").unlink()
+            report = MODULE.audit(root)
+            self.assertIn("missing_title_credit_inventory", {item["type"] for item in report["issues"]})
 
 if __name__ == "__main__":
     unittest.main()

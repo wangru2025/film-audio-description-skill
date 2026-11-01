@@ -8,7 +8,7 @@ Ask no more than five short questions at a time. Give a recommended option and e
 2. **Character naming**: name once before first speech (recommended), repeat after scene changes, or only when voices are confusing. A scene-setting cue that already names the character satisfies first identification.
 3. **Expressions**: only plot-relevant or marked changes (recommended), minimal, or detailed.
 4. **Reveal policy**: preserve the film's reveal order (recommended). Never use model or actor recognition to reveal a concealed identity early.
-5. **Titles and credits**: summarize opening and announce credits (recommended), describe opening fully, skip both, or read selected credits.
+5. **Opening and ending titles/credits**: describe opening and ending, reading visible companies and credits (recommended); describe opening only; read selected credits; or skip both. If the user selects description, it is a binding coverage requirement. Clarify whether a very long end-credit roll should be read in full or limited to principal cast/crew, but never silently downgrade the chosen scope.
 
 ## Round 2: audio and review
 

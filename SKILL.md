@@ -22,7 +22,9 @@ Read [references/recommended-tools.md](references/recommended-tools.md) when cho
 - For script-only work, stop after reviewable script delivery.
 - For an existing script or described track, preserve it and perform the requested review or revision rather than rebuilding automatically.
 
-Before visual analysis, read [references/writing-rules.md](references/writing-rules.md). Maintain canonical character, location, object, and reveal-state records. Build structured visual observations before writing prose; every normal cue must cite observation IDs and evidence timestamps. Read [references/anti-summary-quality-gates.md](references/anti-summary-quality-gates.md) for long works or whenever a draft risks becoming plot summary.
+Before visual analysis, read [references/writing-rules.md](references/writing-rules.md). Maintain canonical character, location, object, and reveal-state records. Identify characters from film-local evidence, never actor recognition or prior plot knowledge alone. Build structured visual observations before writing prose; every normal cue must cite observation IDs and evidence timestamps. Read [references/anti-summary-quality-gates.md](references/anti-summary-quality-gates.md) for long works or whenever a draft risks becoming plot summary.
+
+Treat questionnaire choices as requirements. If the user chooses opening/end-title description, inventory those events across both ends of the media and write the requested logo, title, and credit cues; do not silently omit them.
 
 ## Draft and review
 
@@ -42,7 +44,7 @@ Do not batch-synthesize narration, mix audio, or create the final deliverable un
 
 Use a natural neural voice. Default Chinese recommendations are `zh-CN-XiaoyiNeural` for animation, comedy, and family material, and `zh-CN-XiaoxiaoNeural` for restrained drama or documentary, unless the user chose otherwise. Measure real generated duration for every cue. Prefer shortening prose over exceeding `+40%` speech rate.
 
-Use `scripts/audit_cues.py` before mixing. Narration cues must not overlap each other. Limited overlap with source dialogue is allowed when the user permits it. Keep an independent narration master so the mix can be revised without regenerating speech.
+Read [references/timing-and-mixing.md](references/timing-and-mixing.md). Use `scripts/audit_cues.py` before mixing. Narration cues must not overlap each other. Limited overlap with source dialogue is allowed only according to the user's preference and after placement, shortening, and measured-rate options have been considered. Keep an independent narration master so the mix can be revised without regenerating speech.
 
 Apply ducking only while narration is actually audible. Outside narration intervals the source soundtrack must remain at its original level; never apply a permanent base reduction merely because the film has no dialogue. A short release tail after a cue is only a smooth transition back to unity, not permission to keep non-narrated sections attenuated. Default ducking is light and smooth: approximately 300 ms attack, 650 ms release, weak compression near 3:1, and clearly audible source audio under narration. Treat the timing and strength as recommended starting values, but treat narration-gated ducking and unity gain outside it as invariants.
 

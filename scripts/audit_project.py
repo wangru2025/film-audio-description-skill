@@ -77,8 +77,20 @@ def get_duration(root, project, transcript):
             pass
     return next((number(x) for x in candidates if number(x) is not None), None)
 
+def opening_credits_selected(project):
+    preferences = project.get("preferences", {}) if isinstance(project, dict) else {}
+    setting = preferences.get("opening_credits", preferences.get("titles_and_credits")) if isinstance(preferences, dict) else None
+    if isinstance(setting, dict):
+        setting = setting.get("scope")
+    if setting is True:
+        return True
+    if not isinstance(setting, str):
+        return False
+    return setting.lower() not in ("skip", "skip_both", "none", "off", "false")
+
 def audit(root):
     issues = []
+    required_title_cue_ids = set()
     project = load(root / "project.json", issues) or {}
     transcript_data = load(root / "timeline" / "transcript.json", issues, False) or {}
     transcript = records(transcript_data, "segments")
@@ -102,6 +114,31 @@ def audit(root):
             bible_nonempty += 1
     if bible_nonempty == 0:
         issues.append(issue("error", "all_bibles_empty"))
+
+    characters = load(root / "bible" / "characters.json", issues, False)
+    for character in records(characters, "characters") if characters is not None else []:
+        if character.get("canonical_name") and not character.get("identity_evidence"):
+            issues.append(issue("error", "character_name_without_identity_evidence",
+                                character=character.get("id"), name=character.get("canonical_name")))
+
+    if opening_credits_selected(project):
+        inventory = load(root / "timeline" / "title-credit-events.json", issues, False)
+        if inventory is None:
+            issues.append(issue("error", "missing_title_credit_inventory"))
+        elif not isinstance(inventory, dict) or inventory.get("scope_checked") is not True:
+            issues.append(issue("error", "title_credit_scope_not_checked"))
+        else:
+            events = records(inventory, "events")
+            if not events and inventory.get("no_matching_events") is not True:
+                issues.append(issue("error", "title_credit_inventory_unresolved_empty"))
+            for event in events:
+                if not event.get("cue_ids") and not event.get("approved_omission_reason"):
+                    issues.append(issue("error", "title_credit_event_not_described", event=event.get("id")))
+                if isinstance(event.get("cue_ids"), list):
+                    required_title_cue_ids.update(str(value) for value in event["cue_ids"])
+                for field in ("id", "type", "start", "end", "visible_text", "evidence_frames"):
+                    if field not in event:
+                        issues.append(issue("error", "title_credit_event_missing_field", event=event.get("id"), field=field))
 
     segment_root = root / "segments"
     dirs = sorted(p for p in segment_root.glob("segment-*") if p.is_dir()) if segment_root.is_dir() else []
@@ -181,6 +218,10 @@ def audit(root):
                 issues.append(issue("error", "possible_summary_drift", segment=current["segment"], reason="observation_density_drop"))
             if baseline["average_cue_characters"] and current["average_cue_characters"] > baseline["average_cue_characters"] * 1.8:
                 issues.append(issue("warning", "possible_summary_drift", segment=current["segment"], reason="cue_length_growth"))
+
+    existing_cue_ids = {str(cue.get("id")) for cue in all_cues if cue.get("id") is not None}
+    for cue_id in sorted(required_title_cue_ids - existing_cue_ids):
+        issues.append(issue("error", "title_credit_cue_missing", cue=cue_id))
 
     for scene in scenes:
         ss, se = interval(scene)

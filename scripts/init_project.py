@@ -11,6 +11,7 @@ DIRS = [
 
 DEFAULTS = {
     "description_density": "medium_detailed",
+    "opening_credits": {"scope": "opening_and_principal_ending", "required_when_selected": True},
     "character_naming": "first_speech_once",
     "emotion_description": "plot_relevant",
     "spoiler_policy": "preserve_reveal_order",
