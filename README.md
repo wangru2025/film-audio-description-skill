@@ -4,12 +4,14 @@
 
 An interactive Codex skill for producing reviewable Chinese audio description for short videos and feature-length films.
 
-The skill inspects media, asks an adaptive preference questionnaire, analyzes visual and audio timelines, maintains character and story continuity, and creates a time-coded script for user review. It does **not** synthesize narration or mix a final film until the user explicitly approves the current script.
+The skill inventories the film and any supplied SRT, cast lists, character/costume photos, or production notes; then it analyzes only what those trusted materials do not already provide. It maintains visual evidence and character continuity and creates a standard SRT narration script for review. It does **not** synthesize narration or mix a final film until the user explicitly approves the exact SRT/cue version.
 
 ## Highlights
 
 - Accessible, time-coded Chinese audio-description scripts
 - Required user review and approval before narration or mixing
+- Standard SRT review delivery with a machine-readable evidence map
+- Material-aware workflow: validated dialogue SRT can replace full ASR, while labeled cast references accelerate identity binding
 - Scene-aware feature-film segmentation and subagent orchestration
 - Evidence-linked observations and cues, with anti-summary quality gates
 - Project audit for dialogue restatement, sparse coverage, continuity-state failures, and long-film drift
@@ -97,13 +99,14 @@ The normal workflow is:
 1. Inspect media tracks and duration.
 2. Ask a short questionnaire with recommended settings.
 3. Map the complete film, analyze scene-aware 8–15 minute segments, and assemble them into review batches.
-4. Deliver a readable time-coded script and uncertainty report.
+4. Deliver a standard review SRT plus an evidence/uncertainty map.
 5. Wait for user corrections and explicit approval, such as `Y`.
 6. Synthesize narration, audit timing, mix, and verify the finished output.
 
 ## Safety and production boundaries
 
 - User approval of the current script is mandatory before batch TTS or mixing.
+- Approval is bound to hashes of both the reviewed SRT and matching cue artifact.
 - A meaning-changing script edit invalidates prior approval.
 - Narration cues must not overlap each other.
 - Normal cues must cite concrete visual observations; dialogue and plot exposition are not substitutes for visual evidence.
@@ -116,4 +119,4 @@ The normal workflow is:
 
 MIT. See [LICENSE](LICENSE).
 
-Current release: `v0.3.0`.
+Current release: `v0.4.0`.

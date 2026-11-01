@@ -17,6 +17,9 @@ def main():
     p.add_argument("output")
     p.add_argument("--duration-tolerance", type=float, default=0.25)
     p.add_argument("--report")
+    p.add_argument("--listening-review", help="Completed listening-review JSON; required for a full QC pass.")
+    p.add_argument("--duck-envelope", help="Duck-envelope JSON; required for a full QC pass.")
+    p.add_argument("--audio-measurements", help="Reproducible source/output level and narration-presence measurements.")
     args = p.parse_args()
     source, output = Path(args.source), Path(args.output)
     issues = []
@@ -34,8 +37,27 @@ def main():
             types = [s.get("codec_type") for s in out.get("streams", [])]
             if "video" not in types: issues.append({"type": "missing_video_stream"})
             if "audio" not in types: issues.append({"type": "missing_audio_stream"})
-            result = {"passed": not issues, "issues": issues, "source_probe": src, "output_probe": out,
-                      "manual_audio_checks_required": ["narration audible at sampled cues", "source audible under narration"]}
+            if not args.listening_review:
+                issues.append({"type": "listening_review_required"})
+            else:
+                review = json.loads(Path(args.listening_review).read_text(encoding="utf-8-sig"))
+                if review.get("all_required_items_complete") is not True or review.get("reviewer_kind") == "producing_model":
+                    issues.append({"type": "listening_review_incomplete"})
+            if not args.duck_envelope:
+                issues.append({"type": "duck_envelope_required"})
+            else:
+                envelope = json.loads(Path(args.duck_envelope).read_text(encoding="utf-8-sig"))
+                if not envelope.get("entries") or envelope.get("non_narration_unity_verified") is not True:
+                    issues.append({"type": "duck_envelope_incomplete"})
+            if not args.audio_measurements:
+                issues.append({"type": "audio_measurements_required"})
+            else:
+                measurements = json.loads(Path(args.audio_measurements).read_text(encoding="utf-8-sig"))
+                required = ("source_sha256", "output_sha256", "method", "tolerance_db",
+                            "non_narration_samples", "narration_presence_samples", "source_under_narration_samples")
+                if any(measurements.get(field) in (None, "", []) for field in required):
+                    issues.append({"type": "audio_measurements_incomplete"})
+            result = {"passed": not issues, "issues": issues, "source_probe": src, "output_probe": out}
         except Exception as exc:
             result = {"passed": False, "issues": issues + [{"type": "probe_failure", "error": str(exc)}]}
     rendered = json.dumps(result, ensure_ascii=False, indent=2) + "\n"

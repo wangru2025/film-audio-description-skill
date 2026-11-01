@@ -11,12 +11,15 @@
 - If opening/end-title description was selected, the title/credit inventory covers the chosen scope through the final frame and every event has a cue or approved omission. Company logos use the displayed company name; cast pairings use “演员名饰角色名”.
 - Canonical names, locations, and objects are consistent.
 - Low-confidence claims are listed for review.
-- The accessible review script matches the machine cue file.
+- `script/review.srt`, `script/review-map.json`, and machine cues have identical order, spoken text, and review timing. SRT contains no editorial notes.
+- Supplied-material provenance and hashes are recorded. A trusted SRT or labeled reference gallery replaces redundant analysis only after validation passes; conflicts remain visible.
 - `scripts/audit_project.py` passes its hard gates; investigate its similarity and summary-drift findings even when a heuristic needs human judgment.
+- Scene intervals are ordered and continuously cover the media; observations cannot manufacture density with recycled, out-of-range, or nonexistent frames. Every cited frame resolves to a hashed extracted image in the visual-evidence index. Adjacent cues are reviewed together for distributed plot summary.
 
 ## After synthesis
 
 - Record actual duration, voice, and rate for every cue.
+- Compute audible intervals from rendered narration and intersect them with verified dialogue events. Missing duration/audio metadata blocks mixing.
 - No narration-to-narration overlaps.
 - Rates above `+40%` require rewriting instead.
 - Meaning-changing rewrites invalidate approval; mechanical timing/rate adjustments do not.
@@ -31,6 +34,8 @@
 - Pad only the silent sidechain control when needed. The padded zero signal must not trigger compression or change source level, and source audio must not truncate when the last cue ends.
 - One render owns one temporary target. Rename to final only after checks pass.
 - Every cue within one second of dialogue is listened to in the mix. Key names, numbers, clues, punchlines, emotional lines, and action-driving commands remain intelligible; failed overlaps are moved or rewritten before increasing ducking.
+- Export and audit the duck envelope; attack/release tails cannot become continuous attenuation between cues.
+- Store measured source/output level comparisons for representative non-narration intervals before, between, and after cues, plus source/narration presence measurements during cues. A boolean “unity verified” without interval, command/method, measured values, tolerance, and source/output artifact hashes is not evidence.
 
 ## Final verification
 
@@ -40,4 +45,4 @@
 - Source is audibly present beneath sampled narration.
 - At sampled non-narration locations before, between, and after cues, output source level matches the unducked source within the chosen encoding/limiting tolerance.
 - No clipping, corrupt container, abandoned process, or `.partial` file is delivered.
-- Provide a QC report with commands, results, deviations, and unresolved issues.
+- Required listening records must be complete; a manual-check reminder is not a pass. Provide a QC report with commands, results, deviations, and unresolved issues.

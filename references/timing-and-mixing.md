@@ -4,7 +4,7 @@
 
 Combine reliable subtitle timings, ASR, voice activity, waveform inspection, and listening. ASR text may be wrong; use it to locate speech, then verify important lines by ear or subtitle. Mark dialogue, breaths that belong to a line, narratively important effects, music transitions, and intentional silence. Add modest guard margins around dialogue boundaries, normally about 150–300 ms, then adjust by listening rather than treating the margin as law.
 
-For each cue, record the available slot, measured synthesized duration, nearby dialogue/effects, overlap permission, and placement decision. A gap is usable only when narration plus natural entry/exit fits; do not force a cue into the numeric silence if it clips the last syllable, first syllable, laugh, gasp, door slam, reveal sting, or other meaningful sound.
+For each cue, record the visual-event time, available slot, actual synthesized file, measured audible start/end (silence trimmed), voice/rate, nearby dialogue/effects, overlap permission, placement decision, and temporal displacement. Derive overlap from the audible interval intersected with subtitle/VAD/dialogue intervals; never trust a hand-written `nearby_dialogue: false`. A gap is usable only when narration plus natural entry/exit fits; do not force a cue into numeric silence if it clips a syllable, laugh, gasp, door slam, reveal sting, or other meaningful sound.
 
 ## Placement order
 
@@ -16,7 +16,9 @@ Try these options in order:
 4. Increase speech rate modestly after measuring the actual voice; stay within the approved maximum.
 5. If the user permits limited overlap, overlap only the least important portion of dialogue or ambience and record why it was necessary.
 
-Never cover a character's first identification, key name/number, punchline, whispered clue, emotional confession, command that drives action, or line needed to understand the next scene. Avoid starting narration and dialogue on the same instant. If overlap is unavoidable, prefer a dialogue tail or redundant phrase, keep the original speech intelligible, and review the mixed result by listening—not waveform alone. User permission for “limited overlap” is not blanket permission to narrate across dialogue.
+For an overlap, store every attempted move/rewrite/split/rate result. “Necessary overlap” without failed earlier attempts is not sufficient. Build `timeline/dialogue-events.json`; mark names, numbers, first identifications, clues, punchlines, whispers, emotional lines, commands, and scene-critical lines as `protected`. Protected dialogue cannot overlap narration unless the user explicitly approves that exact exception during review.
+
+Never cover a character's first identification, key name/number, punchline, whispered clue, emotional confession, command that drives action, or line needed to understand the next scene. Avoid starting narration and dialogue on the same instant. If an approved overlap is unavoidable, prefer a dialogue tail or redundant phrase, keep the original speech intelligible, and review the mixed result by listening—not waveform alone. User permission for “limited overlap” is not blanket permission to narrate across dialogue.
 
 ## Gain automation and ducking
 
@@ -24,6 +26,8 @@ Use the narration's actual audible envelope—not the whole export duration—as
 
 Outside narration plus its short transition tails, source gain is exactly unity. Do not lower the whole film, do not duck because dialogue is absent, and do not let padded control silence hold the compressor open. Route narration audibly to the final mix as well as separately to the control path. Keep source, narration master, control envelope, and mixed output separable for revision.
 
+Export the actual duck envelope with `duck_start`, `narration_audible_start/end`, `duck_end`, and `unity_restored_at` for each cue. Bound attack/release by the selected settings; joined tails may not create continuous attenuation between cues unless narration itself is continuous. Measure non-narration regions against source to catch permanent or overlong reduction.
+
 ## Dialogue-protection verification
 
-Listen to every cue that overlaps or sits within one second of dialogue, plus samples from ordinary non-overlap cues. Compare source and mix at the beginning, middle, and end of the film. Confirm that words remain understandable, important effects retain their function, narration is audible without sounding detached, and source level returns smoothly to unity after every cue. Move or rewrite a cue that fails; stronger ducking is not the default fix.
+Listen to every cue that overlaps or sits within one second of dialogue, every rate over `+25%`, every cue dense with proper names/numbers, plus samples from ordinary cues. Record cue ID, listened interval, reviewer, result, required change, and successful re-listen after change. Compare source and mix at the beginning, middle, and end. Confirm that words remain understandable, effects retain their function, narration is audible, and source returns to unity. A checklist written by the producing model is not a completed human/user listening approval; unresolved required listening keeps QC incomplete. Move or rewrite a failing cue; stronger ducking is not the default fix.

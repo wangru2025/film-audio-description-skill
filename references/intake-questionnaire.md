@@ -2,13 +2,22 @@
 
 Ask no more than five short questions at a time. Give a recommended option and explain only the material tradeoff. Do not repeat already confirmed preferences.
 
+## Round 0: supplied materials
+
+First list discovered materials and ask only about ambiguous provenance or intended use. Accept media alone, or any combination of external SRT/ASS/VTT, dialogue scripts, cast-role lists, character/costume reference photos, speaker maps, shot lists, existing descriptions, and production notes.
+
+- Reliable external SRT: use it as the primary dialogue/timing source after sampled synchronization and text checks. Do not run full ASR merely to recreate it; use ASR/VAD only for gaps, doubtful regions, or speech boundaries.
+- Character photos plus a cast-role manifest: use them as a candidate gallery. Record image-to-name provenance, then verify the on-screen binding through visual continuity and film-local evidence. A filename alone is not proof.
+- Unlabeled photos: ask who/what they represent or keep them as unknown references; never infer a canonical name from a face alone.
+- Conflicts: the film is authoritative for timing and visible events. Report conflicts among film, SRT, cast list, photos, and transcript instead of silently choosing.
+
 ## Round 1: writing
 
 1. **Description density**: medium-detailed (recommended), concise, or detailed. Medium-detailed covers characters, locations, important actions, plot-relevant expressions, and objects without narrating every visible item.
 2. **Character naming**: name once before first speech (recommended), repeat after scene changes, or only when voices are confusing. A scene-setting cue that already names the character satisfies first identification.
 3. **Expressions**: only plot-relevant or marked changes (recommended), minimal, or detailed.
 4. **Reveal policy**: preserve the film's reveal order (recommended). Never use model or actor recognition to reveal a concealed identity early.
-5. **Opening and ending titles/credits**: describe opening and ending, reading visible companies and credits (recommended); describe opening only; read selected credits; or skip both. If the user selects description, it is a binding coverage requirement. Clarify whether a very long end-credit roll should be read in full or limited to principal cast/crew, but never silently downgrade the chosen scope.
+5. **Opening and ending titles/credits**: opening companies/title/all opening credits plus principal ending cast/crew (recommended); opening only; all ending cast; complete ending roll; user-specified names/roles; or skip. Store the exact enum and any named selection. If selected, it is binding; never reinterpret “ending” as merely saying that credits roll.
 
 ## Round 2: audio and review
 
@@ -23,7 +32,7 @@ Ask whether to save choices as defaults only after the user chooses them. Do not
 ## Adaptive questions
 
 - Multiple audio tracks: ask which source track to use.
-- Reliable subtitles: explain they will correct transcription and timing, not be redundantly narrated.
+- Reliable subtitles: explain they replace redundant full transcription after synchronization/provenance checks and are not redundantly narrated.
 - Foreign-language source: ask whether to retain original dialogue, use a dub track, or read essential on-screen subtitles.
 - Existing description track: ask whether to audit, supplement, or rebuild it.
 - Silent or music-only work: replace dialogue questions with music and intertitle handling.

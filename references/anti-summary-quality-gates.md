@@ -14,6 +14,8 @@ Ask: “What visible information does this add that the soundtrack does not alre
 
 The complete scene table precedes drafting. Every scene has a visual observation or an explicit no-cue coverage record. Any gap longer than 60–90 seconds must be justified as visually stable or soundtrack-sufficient. Treat sparse contact sheets as indexes, not sufficient evidence. Inspect more densely around action, silent reactions, scene transitions, and object changes.
 
+A no-cue record is not a waiver. It identifies the visible subject/state, why the image is stable, what the soundtrack already conveys, and evidence frames. It cannot cross a cut, entrance, exit, expression change, object transfer, or meaningful action. Repeated boilerplate such as “画面稳定、声音足够” is summary drift, not coverage.
+
 ## Drift gate
 
 Compare each analysis segment with accepted earlier ones. Stop and re-analyze when observation density falls sharply, average cue length rises sharply while observations fall, large unexplained gaps appear, or prose becomes abstract and causal. Cue counts are not quotas: a quiet scene may need few cues, but it still needs evidence coverage. A 20-minute interval with only a handful of observations is not adequate analysis.

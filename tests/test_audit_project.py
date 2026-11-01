@@ -1,4 +1,5 @@
 import importlib.util
+import hashlib
 import json
 import tempfile
 import unittest
@@ -14,9 +15,11 @@ def write(path, value):
     path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
 
 def observation(index, start, end=None, sufficient=False):
-    return {"id": f"obs-{index}", "start": start, "end": end or start + 2,
+    finish = end or start + 2
+    return {"id": f"obs-{index}", "start": start, "end": finish,
             "subject": "女人", "action": "抬手指向屏幕", "object": "屏幕",
-            "location": "控制室", "evidence_frames": [start, start + 1, end or start + 2],
+            "location": "控制室", "evidence_frames": [start, start + 1, finish],
+            "evidence_ids": [f"frame-{start}", f"frame-{start + 1}", f"frame-{finish}"],
             "evidence_type": "visual", "sound_sufficient": sufficient,
             "dialogue_support_only": True, "confidence": 0.95, "uncertainty": None}
 
@@ -25,17 +28,39 @@ class AuditProjectTests(unittest.TestCase):
         write(root / "project.json", {"stage": "script_drafted", "script_version": 1,
               "approved_script_version": None, "media_duration": 480,
               "preferences": {"opening_credits": {"scope": "opening_and_principal_ending"}}})
+        media = root / "media/source.mp4"; media.parent.mkdir(parents=True, exist_ok=True); media.write_bytes(b"test-media")
+        write(root / "materials/manifest.json", {"artifacts": [{"id": "media-1", "type": "source_media",
+              "path": "media/source.mp4", "sha256": hashlib.sha256(b"test-media").hexdigest(),
+              "provenance": "user", "trust_level": "primary", "intended_use": "film authority"}],
+              "skipped_steps": [], "conflicts": []})
+        frame_times = sorted({value for start in (0, 70, 140, 210, 280, 350, 420, 478)
+                              for value in (start, start + 1, start + 2)})
+        indexed = []
+        for value in frame_times:
+            path = root / f"media/frames/{value}.jpg"; path.parent.mkdir(parents=True, exist_ok=True)
+            payload = f"frame-{value}".encode(); path.write_bytes(payload)
+            indexed.append({"id": f"frame-{value}", "timestamp": value, "path": f"media/frames/{value}.jpg",
+                            "sha256": hashlib.sha256(payload).hexdigest(), "source_media_id": "media-1"})
+        write(root / "timeline/visual-evidence.json", {"frames": indexed})
         write(root / "timeline/scenes.json", {"scenes": [{"id": "s1", "start": 0, "end": 240},
               {"id": "s2", "start": 240, "end": 480}]})
         write(root / "timeline/transcript.json", {"duration": 480, "segments": [
               {"start": 202, "end": 205, "text": "我们马上离开这里"}]})
         for name, value in (("characters", [{"id": "c1", "canonical_name": "李明",
-                            "identity_evidence": [{"type": "spoken_address", "time": 20}]}]), ("locations", [{"id": "l1"}]),
+                            "name_evidence": [{"type": "spoken_address", "start": 20, "end": 21,
+                              "source_text": "李明", "observation_ids": ["obs-1"], "evidence_frames": [20], "confidence": .95}],
+                            "person_binding": [{"method": "response_and_shot_continuity", "observation_ids": ["obs-1"],
+                              "evidence_frames": [20], "confidence": .94}], "production_known_at": 20,
+                            "narration_allowed_after": 20}]), ("locations", [{"id": "l1"}]),
                             ("objects", [{"id": "o1"}]), ("story-state", {"time": 0})):
             write(root / f"bible/{name}.json", value)
-        write(root / "timeline/title-credit-events.json", {"scope_checked": True, "events": [
+        write(root / "timeline/title-credit-events.json", {"scope": "opening_and_principal_ending",
+              "checked_ranges": {"opening": [0, 30], "ending": [450, 480]},
+              "inspection_evidence_frames": [0, 15, 450, 479.8],
+              "raw_detections": [{"id": "raw-1", "start": 0, "end": 2, "evidence_frames": [1], "event_id": "credit-1"}], "events": [
               {"id": "credit-1", "type": "company_logo", "start": 0, "end": 2,
-               "visible_text": "某某影业有限公司", "evidence_frames": [1], "cue_ids": ["cue-logo"]}]})
+               "visible_text": "某某影业有限公司", "ocr_confidence": .99,
+               "evidence_frames": [1], "cue_ids": ["cue-logo"]}]})
 
     def test_good_project_passes(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -45,9 +70,17 @@ class AuditProjectTests(unittest.TestCase):
             write(root / "segments/segment-001/observations.json", {"observations": observations})
             write(root / "segments/segment-001/draft-cues.json", {"cues": [
                   {"id": "cue-logo", "start": 0, "text": "某某影业有限公司。",
-                   "observation_ids": ["obs-1"], "evidence_frames": [0, 1, 2]},
+                   "observation_ids": ["obs-1"], "evidence_frames": [0, 1, 2],
+                   "evidence_ids": ["frame-0", "frame-1", "frame-2"],
+                   "visual_event_time": 0, "temporal_displacement": 0,
+                   "atomic_facts": [{"role": "subject", "text": "公司名", "priority": "required"},
+                                    {"role": "state", "text": "出现", "priority": "required"}]},
                   {"id": "cue-1", "start": 140, "text": "女人抬手指向屏幕。",
-                   "observation_ids": ["obs-3"], "evidence_frames": [140, 141, 142]}]})
+                   "observation_ids": ["obs-3"], "evidence_frames": [140, 141, 142],
+                   "evidence_ids": ["frame-140", "frame-141", "frame-142"],
+                   "visual_event_time": 140, "temporal_displacement": 0,
+                   "atomic_facts": [{"role": "subject", "text": "女人", "priority": "required"},
+                                    {"role": "action", "text": "抬手指向", "priority": "required"}]}]})
             write(root / "script/merged-draft.json", {"coverage": {"start": 0, "end": 480}, "cues": []})
             report = MODULE.audit(root)
             self.assertTrue(report["passed"], report["issues"])
@@ -84,6 +117,100 @@ class AuditProjectTests(unittest.TestCase):
             (root / "timeline/title-credit-events.json").unlink()
             report = MODULE.audit(root)
             self.assertIn("missing_title_credit_inventory", {item["type"] for item in report["issues"]})
+
+    def test_fake_title_claim_and_mismatched_cue_fail(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.make_base(root)
+            write(root / "timeline/title-credit-events.json", {"scope_checked": True, "no_matching_events": True, "events": []})
+            report = MODULE.audit(root); kinds = {x["type"] for x in report["issues"]}
+            self.assertTrue({"opening_range_not_proven", "ending_not_checked_to_final_frame",
+                             "title_credit_inspection_without_evidence", "unproven_empty_title_detection"} <= kinds)
+
+    def test_recycled_frames_and_abstract_compression_fail(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.make_base(root)
+            observations = [observation(i, t) for i, t in enumerate((0, 70, 140, 210, 280, 350, 420, 478), 1)]
+            observations[1]["evidence_frames"] = observations[0]["evidence_frames"]
+            observations[1]["action"] = "打开舱门"
+            write(root / "segments/segment-001/manifest.json", {"start": 0, "end": 480, "status": "drafted"})
+            write(root / "segments/segment-001/observations.json", {"observations": observations})
+            write(root / "segments/segment-001/draft-cues.json", {"cues": [{"id": "x", "start": 140,
+                  "text": "众人开始行动。", "observation_ids": ["obs-3"], "evidence_frames": [140],
+                  "evidence_ids": ["frame-140"],
+                  "visual_event_time": 140, "temporal_displacement": 0, "atomic_facts": []}]})
+            kinds = {x["type"] for x in MODULE.audit(root)["issues"]}
+            self.assertTrue({"recycled_evidence_frames", "cue_missing_required_atomic_facts", "possible_plot_summary"} <= kinds)
+
+    def test_unvalidated_srt_cannot_replace_asr(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.make_base(root)
+            subtitle = root / "materials/subtitles/source.srt"; subtitle.parent.mkdir(parents=True, exist_ok=True); subtitle.write_text("x", encoding="utf-8")
+            manifest = json.loads((root / "materials/manifest.json").read_text(encoding="utf-8"))
+            manifest["artifacts"].append({"id": "sub-1", "type": "srt", "path": "materials/subtitles/source.srt",
+                "sha256": hashlib.sha256(b"x").hexdigest(), "provenance": "production", "trust_level": "high",
+                "intended_use": "dialogue timing", "replaces_full_asr": True, "validation": {"encoding_checked": True}})
+            write(root / "materials/manifest.json", manifest)
+            kinds = {x["type"] for x in MODULE.audit(root)["issues"]}
+            self.assertIn("subtitle_not_validated_for_asr_replacement", kinds)
+
+    def test_character_photo_label_needs_provenance(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.make_base(root)
+            photo = root / "materials/character-references/a.jpg"; photo.parent.mkdir(parents=True, exist_ok=True); photo.write_bytes(b"image")
+            manifest = json.loads((root / "materials/manifest.json").read_text(encoding="utf-8"))
+            manifest["artifacts"].append({"id": "photo-1", "type": "character_photo", "path": "materials/character-references/a.jpg",
+                "sha256": hashlib.sha256(b"image").hexdigest(), "provenance": "user", "trust_level": "candidate",
+                "intended_use": "identity candidate", "label": "李明"})
+            write(root / "materials/manifest.json", manifest)
+            self.assertIn("character_reference_label_without_provenance", {x["type"] for x in MODULE.audit(root)["issues"]})
+
+    def test_fake_approval_hash_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.make_base(root)
+            project = json.loads((root / "project.json").read_text(encoding="utf-8"))
+            project.update({"stage": "script_approved", "approved_script_version": 1})
+            write(root / "project.json", project)
+            write(root / "script/merged-draft.json", {"coverage": {"start": 0, "end": 0}, "cues": []})
+            (root / "script/review.srt").write_text("", encoding="utf-8")
+            write(root / "script/approved.json", {"script_version": 1, "script_sha256": "fake",
+                  "review_srt_sha256": "fake", "approved_at": "now", "user_message_ref": "message-1",
+                  "verbatim_user_approval": "Y"})
+            kinds = {x["type"] for x in MODULE.audit(root)["issues"]}
+            self.assertTrue({"approved_script_hash_mismatch", "approved_review_srt_hash_mismatch"} <= kinds)
+
+    def test_generated_stage_computes_protected_overlap_and_requires_timing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.make_base(root)
+            project = json.loads((root / "project.json").read_text(encoding="utf-8")); project["stage"] = "narration_generated"
+            write(root / "project.json", project)
+            write(root / "timeline/dialogue-events.json", {"events": [{"id": "d1", "start": 140, "end": 144,
+                  "text": "密码是三二一", "provenance": "production_srt", "source_ids": ["sub-4"],
+                  "protected": True, "protection_reason": "key number"}]})
+            audio = root / "narration/cues/c1.wav"; audio.parent.mkdir(parents=True, exist_ok=True); audio.write_bytes(b"wav")
+            write(root / "segments/segment-001/manifest.json", {"start": 0, "end": 480, "status": "drafted"})
+            observations = [observation(i, t) for i, t in enumerate((0,70,140,210,280,350,420,478),1)]
+            write(root / "segments/segment-001/observations.json", {"observations": observations})
+            write(root / "segments/segment-001/draft-cues.json", {"cues": [{"id": "c1", "start": 140,
+                  "text": "女人指向屏幕。", "observation_ids": ["obs-3"], "evidence_frames": [140,141,142],
+                  "evidence_ids": ["frame-140","frame-141","frame-142"], "visual_event_time": 140,
+                  "temporal_displacement": 0, "atomic_facts": [{"role":"subject","text":"女人","priority":"required"},
+                  {"role":"action","text":"指向","priority":"required"}], "audible_start": 140,
+                  "audible_end": 143, "measured_duration": 3, "audio_path": "narration/cues/c1.wav"}]})
+            kinds = {x["type"] for x in MODULE.audit(root)["issues"]}
+            self.assertTrue({"protected_dialogue_overlap", "undeclared_computed_dialogue_overlap",
+                             "overlap_without_prior_placement_attempts"} <= kinds)
+
+    def test_mixed_and_qc_stage_rejects_long_duck_and_self_attestation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.make_base(root)
+            project = json.loads((root / "project.json").read_text(encoding="utf-8")); project["stage"] = "quality_checked"
+            write(root / "project.json", project)
+            write(root / "qc/duck-envelope.json", {"entries": [{"cue_id":"ghost","duck_start":1,
+                  "narration_audible_start":2,"narration_audible_end":3,"duck_end":10,"unity_restored_at":10}]})
+            write(root / "qc/listening-review.json", {"reviewer_kind":"producing_model",
+                  "all_required_items_complete": False, "reviews": []})
+            kinds = {x["type"] for x in MODULE.audit(root)["issues"]}
+            self.assertTrue({"self_attested_listening_review", "listening_review_not_closed"} <= kinds)
 
 if __name__ == "__main__":
     unittest.main()

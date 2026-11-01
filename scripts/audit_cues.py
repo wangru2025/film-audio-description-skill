@@ -9,6 +9,7 @@ def main():
     p.add_argument("cue_json")
     p.add_argument("--media-duration", type=float)
     p.add_argument("--report")
+    p.add_argument("--require-rendered", action="store_true", help="Require measured duration, audio path, and audible bounds after TTS.")
     args = p.parse_args()
     cues = json.loads(Path(args.cue_json).read_text(encoding="utf-8"))
     if not isinstance(cues, list):
@@ -29,8 +30,18 @@ def main():
             start = float(cue["start"])
         except (KeyError, TypeError, ValueError):
             continue
-        duration = cue.get("duration")
-        end = start + float(duration) if duration is not None else start
+        duration = cue.get("measured_duration") if args.require_rendered else cue.get("duration", cue.get("review_duration"))
+        if args.require_rendered:
+            for field in ("measured_duration", "audio_path", "audible_start", "audible_end"):
+                if cue.get(field) in (None, ""):
+                    issues.append({"cue": label, "type": "missing_rendered_field", "field": field})
+            try:
+                audible_duration = float(cue["audible_end"]) - float(cue["audible_start"])
+                if abs(audible_duration - float(cue["measured_duration"])) > 0.2:
+                    issues.append({"cue": label, "type": "rendered_duration_mismatch"})
+            except (KeyError, TypeError, ValueError):
+                pass
+        end = float(cue.get("audible_end")) if args.require_rendered and cue.get("audible_end") is not None else start + float(duration) if duration is not None else start
         if start < 0:
             issues.append({"cue": label, "type": "negative_start"})
         if start < previous_start:

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 DIRS = [
-    "media", "timeline", "bible", "segments", "script",
+    "media", "materials/character-references", "materials/subtitles", "timeline", "bible", "segments", "script",
     "narration/cues", "qc", "output"
 ]
 
@@ -54,6 +54,7 @@ def main():
     write_json(root / "project.json", project)
     for name, empty in [("characters", []), ("locations", []), ("objects", []), ("story-state", {})]:
         write_json(root / "bible" / f"{name}.json", empty)
+    write_json(root / "materials" / "manifest.json", {"schema_version": 1, "artifacts": [], "skipped_steps": [], "conflicts": []})
     print(root)
 
 if __name__ == "__main__":

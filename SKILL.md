@@ -9,7 +9,7 @@ Create accessible audio description as a staged, reviewable production. Never tr
 
 ## Start interactively
 
-Inspect the supplied media first. Report duration, video/audio/subtitle tracks, language evidence, and any likely existing description track. Then read [references/intake-questionnaire.md](references/intake-questionnaire.md) and ask the short adaptive questionnaire with recommended answers. Reuse preferences the user already confirmed; summarize them and ask whether to carry them forward instead of repeating every question.
+Inventory all supplied materials before analysis: media, embedded/external subtitles, scripts, cast lists, character sheets, costume/reference photos, existing description tracks, and production notes. Report what each artifact can replace or only assist. With a reliable external SRT, skip redundant full ASR and verify/correct its timing and text by sampling; with cast references, build candidate identities but still bind each reference person to the on-screen track. With media alone, perform transcription and film-local identity discovery. The film remains the final authority when materials conflict. Then read [references/intake-questionnaire.md](references/intake-questionnaire.md) and ask the adaptive questionnaire.
 
 Create a project with `scripts/init_project.py`. Record decisions and stage in `project.json`. Do not infer permission to process unrelated files or publish copyrighted media.
 
@@ -26,11 +26,13 @@ Before visual analysis, read [references/writing-rules.md](references/writing-ru
 
 Treat questionnaire choices as requirements. If the user chooses opening/end-title description, inventory those events across both ends of the media and write the requested logo, title, and credit cues; do not silently omit them.
 
+Do not satisfy schemas with self-authored assertions. Coverage, identity, dialogue overlap, omissions, listening checks, and approvals require the evidence artifacts defined in [references/project-schema.md](references/project-schema.md). An agent's statement that it checked or that the user approved is not evidence.
+
 ## Draft and review
 
-Generate machine-readable cues plus an accessible Markdown review document. Follow [references/project-schema.md](references/project-schema.md). Flag uncertain identities, illegible screen text, ambiguous actions, likely spoilers, and low-confidence speaker assignments.
+Generate machine-readable cues plus a standard SRT review file. Follow [references/project-schema.md](references/project-schema.md). Keep uncertainty, evidence, and editorial notes in companion JSON/QC artifacts rather than polluting spoken SRT text. Flag uncertain identities, illegible screen text, ambiguous actions, likely spoilers, and low-confidence speaker assignments.
 
-Before presenting each review batch, run `scripts/audit_project.py`. Treat missing visual evidence, dialogue restatement, incomplete scene coverage, empty continuity records, or analysis-density drift as drafting failures to correct, not minor warnings to defer.
+Before presenting each review batch, run `scripts/audit_project.py`. Treat missing or recycled visual evidence, dialogue restatement, incomplete scene coverage, empty continuity records, title/credit omissions, weak identity binding, or analysis-density drift as drafting failures to correct, not minor warnings to defer.
 
 For films over 30 minutes, normally deliver review batches of roughly 20 minutes, incorporating user corrections before drafting later batches. After all batches, run a film-wide continuity pass and deliver the merged script for final review.
 
@@ -39,6 +41,8 @@ For films over 30 minutes, normally deliver review batches of roughly 20 minutes
 After writing or materially changing the script, set the stage to `awaiting_user_review` and stop production. Tell the user how to request changes and that `Y` will approve the current version. Accept other unambiguous approval language such as “开始混音” or “按这个制作”; ask a brief confirmation for ambiguous replies.
 
 Do not batch-synthesize narration, mix audio, or create the final deliverable until the current script version is explicitly approved. Any addition, deletion, or meaning-changing rewrite invalidates approval. Purely mechanical timing shifts or modest rate changes do not.
+
+Capture approval as a separate record containing the verbatim user approval reference and SHA-256 of both the exact review SRT the user saw and its matching merged cue artifact. Never manufacture approval from project state. If the user edits SRT, import it as a new cue/SRT/map version and review that version; never mix directly from an un-reconciled edit. Any hash mismatch or missing approval record blocks synthesis.
 
 ## Synthesize and mix after approval
 
@@ -54,4 +58,4 @@ Render to a temporary `.partial` output. Never let concurrent renders write the 
 
 Read [references/quality-control.md](references/quality-control.md). Run `scripts/verify_output.py` and meaningful audio checks. Confirm the narration is actually routed into the final mix, the source remains audible, duration and ending are intact, streams are valid, and no partial render is presented as finished.
 
-Deliver the mixed video, independent narration track, accessible review script, machine-readable cue file, uncertainty report, and QC report when those outputs were requested.
+Deliver the mixed video, independent narration track, review SRT, machine-readable cue file, uncertainty report, and QC report when those outputs were requested.
