@@ -41,6 +41,8 @@ Keep `production_known_at` separate from `narration_allowed_after`. Do not use t
 
 Before an identity reveal, use the safe contemporary label such as “蒙面人” or “女医生.” Store the reveal time and switch names only after the film reveals it.
 
+Neutral labels are analysis scaffolding, not a permanent writing style. Before review delivery, replace an obsolete label with the canonical name from the first narration-allowed point onward. Do not rewrite earlier cues across a deliberate reveal. Pronouns or “两人” remain natural after identification, but do not repeatedly call a confirmed character “红衣年轻人”“短发女孩” or another provisional label. If identity remains unresolved after a real evidence review, keep one stable safe label and expose the uncertainty to the user.
+
 ## Opening, logos, titles, and credits
 
 When the user selected opening/end-title description, inspect the entire opening and ending through the final media frame. Record checked time ranges and evidence frames, keep raw detections separate from the curated inventory, and account for every detection. Every in-scope event must be read or have a version-bound explicit user-approved omission. A bare `scope_checked`, `no_matching_events`, or agent-written omission reason is not evidence.

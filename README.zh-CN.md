@@ -2,6 +2,8 @@
 
 简体中文 | [English](README.md)
 
+[更新日志](CHANGELOG.zh-CN.md)
+
 这是一个交互式 Codex 技能，用于为短视频、动画和长篇电影制作可审阅的中文口述影像。
 
 技能会先盘点影片以及用户提供的 SRT、演员角色表、定妆照、人物参考图和制作资料，只分析这些可信材料尚未解决的部分；随后维护画面证据、人物身份和剧情连续性，并生成标准 SRT 口述稿供审阅。用户没有明确批准完全对应的 SRT 与机器 cue 版本以前，技能不会批量合成语音或混音成片。
@@ -129,4 +131,4 @@ git clone https://github.com/wangru2025/film-audio-description-skill.git `
 
 MIT，详见 [LICENSE](LICENSE)。
 
-当前版本：`v0.4.0`。
+当前版本：`v0.5.0`。

@@ -8,12 +8,15 @@
 - The scene table spans the full film, observations cover every scene, and unexplained gaps or later-segment density collapse have been resolved.
 - Continuity bibles have been merged before later segment work begins.
 - Character names have film-local identity evidence and respect reveal order.
+- The current batch has a completed identity-convergence report. No duplicate/provisional character records remain; every appearing character is confirmed, deliberately not yet revealed, or explicitly unresolved after evidence review. Character cues reference canonical IDs, and obsolete neutral labels do not survive past the allowed naming point.
 - If opening/end-title description was selected, the title/credit inventory covers the chosen scope through the final frame and every event has a cue or approved omission. Company logos use the displayed company name; cast pairings use “演员名饰角色名”.
 - Canonical names, locations, and objects are consistent.
 - Low-confidence claims are listed for review.
 - `script/review.srt`, `script/review-map.json`, and machine cues have identical order, spoken text, and review timing. SRT contains no editorial notes.
 - Supplied-material provenance and hashes are recorded. A trusted SRT or labeled reference gallery replaces redundant analysis only after validation passes; conflicts remain visible.
 - `scripts/audit_project.py` passes its hard gates; investigate its similarity and summary-drift findings even when a heuristic needs human judgment.
+- `awaiting_user_review` has frozen later waves: no future segment directory, manifest, observation, cue, or work package has been created beyond the current review range.
+- Segment directories contain analysis artifacts, not ad hoc code. Mechanical evidence extraction, hashing, transcript slicing, ID assignment, overlap calculation, and schema expansion were performed by the bundled tools.
 - Scene intervals are ordered and continuously cover the media; observations cannot manufacture density with recycled, out-of-range, or nonexistent frames. Every cited frame resolves to a hashed extracted image in the visual-evidence index. Adjacent cues are reviewed together for distributed plot summary.
 
 ## After synthesis

@@ -2,6 +2,15 @@
 
 These are practical recommendations, not hard dependencies. Equivalent local, cloud, commercial, or open-source tools are acceptable when they produce the required timestamps, visual evidence, natural speech, or validated media output. Record the selected tools and versions in the project QC report.
 
+## Bundled workflow tools
+
+- `scripts/prepare_segment.py`: default for selecting segment shots, slicing transcript context, extracting and hashing evidence frames, and creating the work package.
+- `scripts/finalize_segment.py`: default for expanding compact agent analysis into canonical observations, cues, evidence proposals, manifests, and bible proposals while computing dialogue intersections.
+- `scripts/render_review_srt.py`: creates the review SRT and evidence map from merged cues.
+- `scripts/audit_project.py`: enforces evidence, identity, review, mix, and no-ad-hoc-code gates.
+
+These tools exist so coordinating and segment agents spend their context on watching, reasoning, and writing. Do not replace them with per-segment Python, PowerShell, shell, or batch scripts. Extend a bundled tool with tests when a recurring capability is genuinely missing.
+
 ## Media inspection, extraction, and mixing
 
 **Recommended:** FFmpeg and FFprobe.

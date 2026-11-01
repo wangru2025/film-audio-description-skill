@@ -2,6 +2,8 @@
 
 [简体中文](README.zh-CN.md) | English
 
+[Changelog](CHANGELOG.md)
+
 An interactive Codex skill for producing reviewable Chinese audio description for short videos and feature-length films.
 
 The skill inventories the film and any supplied SRT, cast lists, character/costume photos, or production notes; then it analyzes only what those trusted materials do not already provide. It maintains visual evidence and character continuity and creates a standard SRT narration script for review. It does **not** synthesize narration or mix a final film until the user explicitly approves the exact SRT/cue version.
@@ -119,4 +121,4 @@ The normal workflow is:
 
 MIT. See [LICENSE](LICENSE).
 
-Current release: `v0.4.0`.
+Current release: `v0.5.0`.

@@ -24,6 +24,8 @@ Read [references/recommended-tools.md](references/recommended-tools.md) when cho
 
 Before visual analysis, read [references/writing-rules.md](references/writing-rules.md). Maintain canonical character, location, object, and reveal-state records. Identify characters from film-local evidence, never actor recognition or prior plot knowledge alone. Build structured visual observations before writing prose; every normal cue must cite observation IDs and evidence timestamps. Read [references/anti-summary-quality-gates.md](references/anti-summary-quality-gates.md) for long works or whenever a draft risks becoming plot summary.
 
+Use the bundled segment tools for mechanical work. The coordinator runs `scripts/prepare_segment.py` to package shots, transcript context, current bible, and extracted evidence. A segment agent analyzes those materials and edits only the compact `analysis-input.json`; it does not write Python, PowerShell, shell, batch files, FFmpeg commands, hashing code, or schema-building utilities. The coordinator runs `scripts/finalize_segment.py` to produce canonical artifacts and compute overlaps. If a needed reusable capability is missing, stop that segment and improve the skill-level tool once; do not improvise a per-segment program.
+
 Treat questionnaire choices as requirements. If the user chooses opening/end-title description, inventory those events across both ends of the media and write the requested logo, title, and credit cues; do not silently omit them.
 
 Do not satisfy schemas with self-authored assertions. Coverage, identity, dialogue overlap, omissions, listening checks, and approvals require the evidence artifacts defined in [references/project-schema.md](references/project-schema.md). An agent's statement that it checked or that the user approved is not evidence.
@@ -34,7 +36,11 @@ Generate machine-readable cues plus a standard SRT review file. Follow [referenc
 
 Before presenting each review batch, run `scripts/audit_project.py`. Treat missing or recycled visual evidence, dialogue restatement, incomplete scene coverage, empty continuity records, title/credit omissions, weak identity binding, or analysis-density drift as drafting failures to correct, not minor warnings to defer.
 
+Before generating a review SRT, the coordinator must run identity convergence for every character appearing in that batch: merge duplicate provisional records, inspect available name evidence, bind confirmed identities, enforce reveal timing, and rewrite cues that still use obsolete neutral labels. An unresolved identity is allowed only with a documented evidence review and user-facing uncertainty item; “leave it for later” is not a resolution. Every character-bearing cue cites canonical character IDs.
+
 For films over 30 minutes, normally deliver review batches of roughly 20 minutes, incorporating user corrections before drafting later batches. After all batches, run a film-wide continuity pass and deliver the merged script for final review.
+
+`awaiting_user_review` is a real pause. Do not create, dispatch, or analyze any segment beyond the current review batch until the user approves it or supplies corrections and the coordinator updates the bible/work packages.
 
 ### Mandatory approval gate
 

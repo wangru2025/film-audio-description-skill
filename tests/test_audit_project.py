@@ -24,6 +24,40 @@ def observation(index, start, end=None, sufficient=False):
             "dialogue_support_only": True, "confidence": 0.95, "uncertainty": None}
 
 class AuditProjectTests(unittest.TestCase):
+    def test_long_observation_interval_does_not_create_false_middle_gap(self):
+        gaps = MODULE.clipped_coverage_gaps([(0, 20), (20, 180), (180, 240)], 0, 240)
+        self.assertEqual(gaps, [])
+        self.assertEqual(MODULE.clipped_coverage_gaps([(0, 20), (180, 240)], 0, 240), [(20, 180)])
+
+    def test_scene_coverage_is_limited_to_current_review_batch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.make_base(root)
+            project = json.loads((root / "project.json").read_text(encoding="utf-8"))
+            project["current_review_batch"] = {"id": "b1", "start": 0, "end": 240}
+            write(root / "project.json", project)
+            observations = [observation(i, t, t + 60) for i, t in enumerate((0, 60, 120, 180), 1)]
+            write(root / "segments/segment-001/manifest.json", {"start": 0, "end": 240, "status": "drafted"})
+            write(root / "segments/segment-001/observations.json", {"observations": observations})
+            write(root / "segments/segment-001/draft-cues.json", {"cues": []})
+            issues = MODULE.audit(root)["issues"]
+            uncovered = [item for item in issues if item["type"] == "scene_without_observation_coverage"]
+            self.assertFalse(any(item.get("scene") == "s2" for item in uncovered), uncovered)
+
+    def test_review_scope_excludes_prior_batch_and_clips_crossing_scene(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.make_base(root)
+            project = json.loads((root / "project.json").read_text(encoding="utf-8"))
+            project.update({"media_duration": 480, "current_review_batch": {"id": "b2", "start": 200, "end": 300}})
+            write(root / "project.json", project)
+            write(root / "timeline/scenes.json", {"scenes": [{"id": "prior", "start": 0, "end": 200},
+                  {"id": "crossing", "start": 200, "end": 360}, {"id": "future", "start": 360, "end": 480}]})
+            scoped_observation = observation(1, 200, 300)
+            write(root / "segments/segment-001/manifest.json", {"start": 200, "end": 300, "status": "drafted"})
+            write(root / "segments/segment-001/observations.json", {"observations": [scoped_observation]})
+            write(root / "segments/segment-001/draft-cues.json", {"cues": []})
+            uncovered = [item for item in MODULE.audit(root)["issues"] if item["type"] == "scene_without_observation_coverage"]
+            self.assertEqual(uncovered, [])
+
     def make_base(self, root):
         write(root / "project.json", {"stage": "script_drafted", "script_version": 1,
               "approved_script_version": None, "media_duration": 480,
@@ -211,6 +245,54 @@ class AuditProjectTests(unittest.TestCase):
                   "all_required_items_complete": False, "reviews": []})
             kinds = {x["type"] for x in MODULE.audit(root)["issues"]}
             self.assertTrue({"self_attested_listening_review", "listening_review_not_closed"} <= kinds)
+
+    def test_review_stage_requires_identity_convergence_and_freezes_future_waves(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.make_base(root)
+            project = json.loads((root / "project.json").read_text(encoding="utf-8"))
+            project.update({"stage": "awaiting_user_review", "current_review_batch": {"id": "b1", "start": 0, "end": 480}})
+            write(root / "project.json", project)
+            write(root / "bible/characters.json", {"characters": [
+                {"provisional_id": "girl-a", "safe_label": "短发女孩", "first_visual_appearance": 100},
+                {"id": "girl-b", "safe_label": "短发女孩", "first_visual_appearance": 120}]})
+            (root / "segments/segment-002").mkdir(parents=True)
+            kinds = {x["type"] for x in MODULE.audit(root)["issues"]}
+            expected = {"missing_identity_convergence_report", "provisional_character_in_review_bible",
+                        "duplicate_character_safe_label", "future_segment_started_during_review"}
+            self.assertTrue(expected <= kinds, expected - kinds)
+
+    def test_ad_hoc_segment_code_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.make_base(root)
+            tool = root / "segments/segment-001/build_segment.py"; tool.parent.mkdir(parents=True, exist_ok=True)
+            tool.write_text("print('mechanical work')", encoding="utf-8")
+            issues = MODULE.audit(root)["issues"]
+            matches = [item for item in issues if item["type"] == "ad_hoc_segment_tool"]
+            self.assertEqual(len(matches), 1)
+            self.assertIn("build_segment.py", matches[0]["path"])
+
+    def test_confirmed_character_cannot_keep_obsolete_neutral_label(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.make_base(root)
+            project = json.loads((root / "project.json").read_text(encoding="utf-8"))
+            project.update({"stage": "awaiting_user_review", "current_review_batch": {"id": "b1", "start": 0, "end": 480}})
+            write(root / "project.json", project)
+            character = json.loads((root / "bible/characters.json").read_text(encoding="utf-8"))[0]
+            character.update({"safe_label": "红衣年轻人", "narration_allowed_after": 20, "first_visual_appearance": 0})
+            write(root / "bible/characters.json", {"characters": [character]})
+            write(root / "qc/identity-convergence.json", {"review_range": {"start": 0, "end": 480},
+                  "characters": [{"character_id": "c1", "resolution_status": "confirmed",
+                  "evidence_sources_checked": ["production_srt"], "cue_ids": ["cue-1"]}]})
+            observations = [observation(i, t) for i, t in enumerate((0,70,140,210,280,350,420,478),1)]
+            write(root / "segments/segment-001/manifest.json", {"start": 0, "end": 480, "status": "drafted"})
+            write(root / "segments/segment-001/observations.json", {"observations": observations})
+            write(root / "segments/segment-001/draft-cues.json", {"cues": [{"id": "cue-1", "start": 140,
+                  "text": "红衣年轻人抬手。", "subject_character_ids": ["c1"], "observation_ids": ["obs-3"],
+                  "evidence_frames": [140,141,142], "evidence_ids": ["frame-140","frame-141","frame-142"],
+                  "visual_event_time": 140, "temporal_displacement": 0, "atomic_facts": [
+                  {"role":"subject","text":"李明","priority":"required"},
+                  {"role":"action","text":"抬手","priority":"required"}]}]})
+            self.assertIn("obsolete_neutral_label_after_identity_reveal", {x["type"] for x in MODULE.audit(root)["issues"]})
 
 if __name__ == "__main__":
     unittest.main()

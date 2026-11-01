@@ -38,6 +38,30 @@ def frames_ok(fs,s,e,d):
  if not isinstance(fs,list) or not fs:return False
  vv=[n(x) for x in fs]
  return not any(x is None for x in vv) and vv==sorted(vv) and (d is None or all(0<=x<=d for x in vv)) and s is not None and e is not None and all(s-1<=x<=e+1 for x in vv)
+def clipped_coverage_gaps(intervals, start, end, threshold=90):
+ if start is None or end is None or end <= start:return []
+ clipped=[]
+ for left,right in intervals:
+  left=n(left);right=n(right)
+  if left is None or right is None or right <= left:continue
+  left=max(start,left);right=min(end,right)
+  if right > left:clipped.append((left,right))
+ clipped.sort()
+ merged=[]
+ for left,right in clipped:
+  if not merged or left > merged[-1][1]:merged.append([left,right])
+  else:merged[-1][1]=max(merged[-1][1],right)
+ gaps=[];cursor=start
+ for left,right in merged:
+  if left-cursor>threshold:gaps.append((cursor,left))
+  cursor=max(cursor,right)
+ if end-cursor>threshold:gaps.append((cursor,end))
+ return gaps
+
+def review_scope(project):
+ batch=project.get("current_review_batch") or {}
+ start=n(batch.get("start"));end=n(batch.get("end"))
+ return (start,end) if start is not None and end is not None and end > start else (None,None)
 def parse_srt(path,a):
  try:text=path.read_text(encoding="utf-8-sig").replace("\r\n","\n")
  except Exception as e:add(a,"invalid_review_srt",detail=str(e));return []
@@ -60,6 +84,7 @@ def approval_ok(root,ref,script_version,script_hash,review_hash,a,kind):
 
 def audit(root):
  root=Path(root);a=[];p=load(root/"project.json",a,True) or {};trd=load(root/"timeline/transcript.json",a) or {};tr=rows(trd,"segments")
+ audit_start,audit_end=review_scope(p)
  d=n(p.get("media_duration")) or n(p.get("duration")) or n(trd.get("duration"));sc=rows(load(root/"timeline/scenes.json",a,True) or {},"scenes")
  prev=0
  if not sc:add(a,"empty_scene_table")
@@ -72,7 +97,7 @@ def audit(root):
  if d is not None and prev<d-5:add(a,"incomplete_scene_coverage",scene_end=prev,media_duration=d)
  bible={k:load(root/f"bible/{k}.json",a,True) for k in ("characters","locations","objects","story-state")}
  if all(x in (None,[],{}) for x in bible.values()):add(a,"all_bibles_empty")
- manifest=load(root/"materials/manifest.json",a)
+ authorized_tools=set();manifest=load(root/"materials/manifest.json",a)
  if not isinstance(manifest,dict):add(a,"missing_materials_manifest")
  else:
   artifacts=rows(manifest,"artifacts")
@@ -88,6 +113,8 @@ def audit(root):
     checks=item.get("validation") or {}
     if not all(checks.get(x) is True for x in ("encoding_checked","duration_checked","sync_sampled","text_sampled")):add(a,"subtitle_not_validated_for_asr_replacement",material=item.get("id"))
    if item.get("type") in ("character_photo","costume_photo") and item.get("label") and not item.get("label_provenance"):add(a,"character_reference_label_without_provenance",material=item.get("id"))
+   if item.get("type")=="authorized_project_tool" and item.get("path"):
+    authorized_tools.add(str((root/item["path"]).resolve()).lower())
   for skip in rows(manifest,"skipped_steps"):
    if not skip.get("step") or not skip.get("replaced_by_material_ids") or not skip.get("reason"):add(a,"unjustified_skipped_analysis_step")
  visual_index=load(root/"timeline/visual-evidence.json",a);visual_by_id={}
@@ -99,7 +126,8 @@ def audit(root):
    elif not target.is_file():add(a,"visual_evidence_file_missing",evidence=fid)
    elif sha(target)!=item.get("sha256"):add(a,"visual_evidence_hash_mismatch",evidence=fid)
    visual_by_id[fid]=item
- for c in rows(bible.get("characters"),"characters"):
+ characters=rows(bible.get("characters"),"characters")
+ for c in characters:
   if not c.get("canonical_name"):continue
   for key,req in (("name_evidence",("type","start","end","source_text","observation_ids","evidence_frames","confidence")),("person_binding",("method","observation_ids","evidence_frames","confidence"))):
    es=c.get(key)
@@ -110,7 +138,7 @@ def audit(root):
   allow=n(c.get("narration_allowed_after"));name=n(c.get("first_naming_cue_time"));speech=n(c.get("first_spoken_line_time"))
   if allow is None:add(a,"missing_narration_reveal_time",character=c.get("id"))
   if name is not None and allow is not None and name<allow-.05:add(a,"character_named_before_reveal",character=c.get("id"))
-  if (p.get("preferences") or {}).get("character_naming")=="first_speech_once" and speech is not None and (name is None or name>=speech):add(a,"character_not_named_before_first_speech",character=c.get("id"))
+  if (p.get("preferences") or {}).get("character_naming")=="first_speech_once" and speech is not None and allow is not None and speech>=allow and (name is None or name>=speech):add(a,"character_not_named_before_first_speech",character=c.get("id"))
  title_cues={};approval_refs=[]
  if title_on(p):
   inv=load(root/"timeline/title-credit-events.json",a)
@@ -139,18 +167,26 @@ def audit(root):
     for cid in cs:title_cues[str(cid)]=e
  dirs=sorted(x for x in (root/"segments").glob("segment-*") if x.is_dir()) if (root/"segments").is_dir() else []
  if not dirs:add(a,"no_segments")
- obs={};cues={};done=[];stats=[];sigs={}
+ for directory in dirs:
+  for path in directory.rglob("*"):
+   if path.is_file() and path.suffix.lower() in (".py",".ps1",".sh",".bat",".cmd",".exe") and str(path.resolve()).lower() not in authorized_tools:
+    add(a,"ad_hoc_segment_tool",segment=directory.name,path=str(path.relative_to(root)))
+ obs={};cues={};done=[];stats=[];sigs={};segment_meta=[]
  for dr in dirs:
   m=load(dr/"manifest.json",a);oo=load(dr/"observations.json",a);cc=load(dr/"draft-cues.json",a)
-  if None in (m,oo,cc):add(a,"incomplete_segment_directory",segment=dr.name);continue
+  if None in (m,oo,cc):
+   add(a,"incomplete_segment_directory",segment=dr.name);segment_meta.append({"name":dr.name,"start":None,"end":None,"complete":False});continue
   ol=rows(oo,"observations");cl=rows(cc,"cues");ss,se=bounds(m)
+  segment_meta.append({"name":dr.name,"start":ss,"end":se,"complete":True})
   if ss is None or se is None or se<=ss:add(a,"invalid_segment_bounds",segment=dr.name);continue
   mins=(se-ss)/60
   if mins>15.5:add(a,"analysis_segment_too_coarse",segment=dr.name)
   if len(ol)<max(3,int(mins+.999)):add(a,"insufficient_observation_density",segment=dr.name)
-  pts=[ss]+sorted(x for x in (bounds(o)[0] for o in ol) if x is not None)+[se]
-  for x,y in zip(pts,pts[1:]):
-   if y-x>90:add(a,"unexplained_observation_gap",segment=dr.name,start=x,end=y)
+  scope_start=max(ss,audit_start) if audit_start is not None else ss
+  scope_end=min(se,audit_end) if audit_end is not None else se
+  if scope_end > scope_start:
+   for left,right in clipped_coverage_gaps((bounds(o) for o in ol),scope_start,scope_end):
+    add(a,"unexplained_observation_gap",segment=dr.name,start=left,end=right)
   for o in ol:
    oid=str(o.get("id"));s,e=bounds(o);req=("id","start","end","subject","action","location","evidence_frames","evidence_type","sound_sufficient","confidence")
    miss=[f for f in req if o.get(f) in (None,"",[])]
@@ -201,9 +237,15 @@ def audit(root):
  if stats:
   for x in stats[1:]:
    if x["observations_per_minute"]<stats[0]["observations_per_minute"]*.55:add(a,"possible_summary_drift",segment=x["segment"])
- for x in sc:
+ if audit_start is None or audit_end is None:
+  if done:audit_start=min(x[0] for x in done);audit_end=max(x[1] for x in done)
+  elif d is not None:audit_start,audit_end=0,d
+ coverage_scenes=[x for x in sc if audit_start is not None and audit_end is not None and bounds(x)[0] is not None and bounds(x)[1] is not None and bounds(x)[0]<audit_end and bounds(x)[1]>audit_start]
+ scoped_observations=[o for o in obs.values() if audit_start is not None and audit_end is not None and bounds(o)[0] is not None and bounds(o)[1] is not None and bounds(o)[0]<audit_end and bounds(o)[1]>audit_start]
+ for x in coverage_scenes:
   s,e=bounds(x)
-  if s is not None and not any((bounds(o)[0] or 0)<=e and (bounds(o)[1] or 0)>=s for o in obs.values()):add(a,"scene_without_observation_coverage",scene=x.get("id"))
+  clipped_start=max(s,audit_start);clipped_end=min(e,audit_end)
+  if not any(bounds(o)[0]<clipped_end and bounds(o)[1]>clipped_start for o in scoped_observations):add(a,"scene_without_observation_coverage",scene=x.get("id"),audit_start=clipped_start,audit_end=clipped_end)
  no_cue=[o for o in obs.values() if o.get("sound_sufficient") is True]
  boilerplate={norm(o.get("visible_state"))+"|"+norm(o.get("stability_reason"))+"|"+norm(o.get("sound_conveys")) for o in no_cue}
  if len(no_cue)>=3 and len(boilerplate)<=max(1,len(no_cue)//3):add(a,"boilerplate_no_cue_coverage",records=len(no_cue),unique=len(boilerplate))
@@ -231,6 +273,44 @@ def audit(root):
     if srow["index"]!=index or mrow.get("srt_index")!=index:add(a,"review_srt_index_mismatch",index=index)
     if str(mrow.get("cue_id"))!=str(cue.get("id")) or srow["text"]!=str(cue.get("text","")).strip() or mrow.get("text")!=srow["text"]:add(a,"review_srt_text_or_id_mismatch",index=index)
     if srow["start"] is None or srow["end"] is None or abs(srow["start"]-(n(cue.get("start")) or 0))>.002 or abs((mrow.get("start") or 0)-srow["start"])>.002 or abs((mrow.get("end") or 0)-srow["end"])>.002:add(a,"review_srt_timing_mismatch",index=index)
+  batch=p.get("current_review_batch") or {};batch_start=n(batch.get("start"));batch_end=n(batch.get("end"))
+  convergence=load(root/"qc/identity-convergence.json",a)
+  if batch_start is None or batch_end is None:add(a,"missing_current_review_range")
+  if not isinstance(convergence,dict):add(a,"missing_identity_convergence_report")
+  else:
+   cr=convergence.get("review_range") or {};cs=n(cr.get("start"));ce=n(cr.get("end"));entries=rows(convergence,"characters")
+   if batch_start is None or batch_end is None or cs is None or ce is None or abs(cs-batch_start)>.05 or abs(ce-batch_end)>.05:add(a,"identity_convergence_range_mismatch")
+   covered=set()
+   for entry in entries:
+    cid=str(entry.get("character_id"));covered.add(cid);status=entry.get("resolution_status")
+    if not cid or status not in ("confirmed","not_yet_revealed","unresolved_after_evidence_review"):add(a,"invalid_identity_resolution",character=cid)
+    if not entry.get("evidence_sources_checked"):add(a,"identity_resolution_without_evidence_review",character=cid)
+    if status=="unresolved_after_evidence_review" and (not entry.get("unresolved_reason") or not entry.get("uncertainty_item_id")):add(a,"unresolved_identity_not_exposed",character=cid)
+   for c in characters:
+    cid=str(c.get("id") or c.get("provisional_id") or "")
+    first=n(c.get("first_visual_appearance"))
+    if cid and batch_end is not None and first is not None and batch_start<=first<=batch_end and cid not in covered:add(a,"batch_character_missing_identity_resolution",character=cid)
+  keys={};safe_keys={}
+  for c in characters:
+   cid=str(c.get("id") or c.get("provisional_id") or "")
+   if c.get("provisional_id"):add(a,"provisional_character_in_review_bible",character=cid)
+   if cid:
+    if cid in keys:add(a,"duplicate_character_record",character=cid)
+    keys[cid]=c
+   safe=norm(c.get("safe_label"))
+   if safe:
+    if safe in safe_keys and not c.get("distinct_person_evidence"):add(a,"duplicate_character_safe_label",characters=[safe_keys[safe],cid],safe_label=c.get("safe_label"))
+    else:safe_keys[safe]=cid
+  for cid,c in keys.items():
+   canonical=c.get("canonical_name");allowed=n(c.get("narration_allowed_after"));safe=str(c.get("safe_label") or "")
+   related=[cue for cue in cues.values() if cid in [str(x) for x in cue.get("subject_character_ids",[])]]
+   if not related and any(safe and safe in str(cue.get("text","")) or canonical and canonical in str(cue.get("text","")) for cue in cues.values()):add(a,"character_cue_missing_canonical_id",character=cid)
+   if canonical and allowed is not None and safe:
+    for cue in related:
+     if n(cue.get("visual_event_time")) is not None and n(cue.get("visual_event_time"))>=allowed and safe in str(cue.get("text","")):add(a,"obsolete_neutral_label_after_identity_reveal",character=cid,cue=cue.get("id"))
+  if p.get("stage")=="awaiting_user_review" and batch_end is not None:
+   for item in segment_meta:
+    if not item["complete"] or item["start"] is not None and item["start"]>=batch_end-.05:add(a,"future_segment_started_during_review",segment=item["name"])
  appr=load(root/"script/approved.json",a)
  if at(p,"script_approved") or p.get("approved_script_version") is not None or approval_refs:
   if not isinstance(appr,dict):add(a,"missing_approval_record")
